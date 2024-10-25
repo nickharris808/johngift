@@ -178,7 +178,7 @@ def main():
 
         with tab2:
            st.markdown("### Chat about the Book")
-                if not st.session_state.messages:
+        if not st.session_state.messages:
                 initialize_chat(book_data['Summary'])
             display_chat_interface()
 
