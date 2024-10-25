@@ -13,24 +13,42 @@ if 'messages' not in st.session_state:
 if 'openai_model' not in st.session_state:
     st.session_state.openai_model = "gpt-4"
 
+# Define categories
+CATEGORIES = [
+    "All Categories",
+    "Self-help",
+    "History",
+    "Biography & Memoir",
+    "Science",
+    "Non-fiction",
+    "Fiction",
+    "Biography",
+    "Health",
+    "Business",
+    "Economics",
+    "Memoir",
+    "Classic",
+    "Thriller",
+    "Philosophy",
+    "Fantasy",
+    "Historical",
+    "Business & Economics",
+    "Travel"
+]
+
 # Sample data in case CSV is not found
 SAMPLE_DATA = {
-    'Book': ['Atomic Habits', 'Deep Work', 'Think Again'],
+    'Title': ["Atomic Habits", "Deep Work", "Think Again"],
     'Summary': [
-        'A guide about building good habits and breaking bad ones.',
-        'How to develop the ability to focus without distraction.',
-        'The power of knowing what you don't know and how to rethink and unlearn.'
+        "A guide about building good habits and breaking bad ones.",
+        "How to develop the ability to focus without distraction.",
+        "The power of knowing what you don't know and how to rethink and unlearn."
     ],
-    'Category': ['Self-Help', 'Productivity', 'Psychology'],
-    'Quotes': [
-        '"You do not rise to the level of your goals. You fall to the level of your systems."',
-        '"Deep work is the ability to focus without distraction on a cognitively demanding task."',
-        '"The goal is not to be right. The goal is to get it right."'
-    ],
+    'Category': ["Self-help", "Business", "Non-fiction"],
     'Personalized Takeaway': [
-        'Focus on building systems rather than setting goals.',
-        'Schedule deep work sessions and protect them zealously.',
-        'Embrace the joy of being wrong and learning from mistakes.'
+        "Focus on building systems rather than setting goals.",
+        "Schedule deep work sessions and protect them zealously.",
+        "Embrace the joy of being wrong and learning from mistakes."
     ]
 }
 
@@ -64,7 +82,7 @@ def initialize_chat(book_summary: str):
         {book_summary}
         
         Provide thoughtful, relevant responses based on the book's content and themes. 
-        When appropriate, reference specific examples or quotes from the book to support your points."""
+        When appropriate, reference specific examples from the book to support your points."""
     }
     st.session_state.messages = [system_prompt]
 
@@ -118,22 +136,40 @@ def main():
     # Load data
     df = load_data()
 
-    # Book selection
-    selected_book = st.selectbox(
-        "Select Book",
-        options=df['Book'].tolist(),
-        index=None,
-        placeholder="Choose a book..."
-    )
+    # Create two columns for the filters
+    col1, col2 = st.columns([1, 2])
+
+    with col1:
+        # Category filter dropdown
+        selected_category = st.selectbox(
+            "Select Category",
+            options=CATEGORIES,
+            index=0,
+            key="category_filter"
+        )
+
+    # Filter books based on selected category
+    if selected_category == "All Categories":
+        filtered_df = df
+    else:
+        filtered_df = df[df['Category'] == selected_category]
+
+    with col2:
+        # Book selection dropdown (filtered by category)
+        selected_book = st.selectbox(
+            "Select Book",
+            options=filtered_df['Title'].tolist(),  # Changed from 'Book' to 'Title'
+            index=None,
+            placeholder="Choose a book..."
+        )
 
     if selected_book:
-        book_data = df[df['Book'] == selected_book].iloc[0]
+        book_data = df[df['Title'] == selected_book].iloc[0]  # Changed from 'Book' to 'Title'
 
-        # Create tabs
-        tab1, tab2, tab3, tab4 = st.tabs([
+        # Create three tabs
+        tab1, tab2, tab3 = st.tabs([
             "Summary", 
-            "Quotes", 
-            "Applicable Advice",
+            "Personalized Takeaway",
             "Chat"
         ])
 
@@ -142,14 +178,10 @@ def main():
             st.write(book_data['Summary'])
 
         with tab2:
-            st.markdown("### Notable Quotes")
-            st.write(book_data['Quotes'])
-
-        with tab3:
-            st.markdown("### Applicable Advice")
+            st.markdown("### Personalized Takeaway")
             st.write(book_data['Personalized Takeaway'])
 
-        with tab4:
+        with tab3:
             st.markdown("### Chat about the Book")
             if not st.session_state.messages:
                 initialize_chat(book_data['Summary'])
