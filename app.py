@@ -11,7 +11,7 @@ st.set_page_config(page_title="Shoe Felt Books", layout="wide")
 if 'messages' not in st.session_state:
     st.session_state.messages = []
 if 'openai_model' not in st.session_state:
-    st.session_state.openai_model = "gpt-4"
+    st.session_state.openai_model = "gpt-40-mini"
 
 # Define categories
 CATEGORIES = [
