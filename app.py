@@ -167,10 +167,9 @@ def main():
         book_data = df[df['Title'] == selected_book].iloc[0]  # Changed from 'Book' to 'Title'
 
         # Create three tabs
-        tab1, tab2, tab3 = st.tabs([
+        tab1, tab2 = st.tabs([
             "Summary", 
-            "Personalized Takeaway",
-            "Chat"
+            "Personalized Takeaway"
         ])
 
         with tab1:
