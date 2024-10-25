@@ -131,7 +131,7 @@ def display_chat_interface():
 
 def main():
     """Main application function."""
-    st.title("Shoe Felt Books")
+    st.title("John's Books")
 
     # Load data
     df = load_data()
