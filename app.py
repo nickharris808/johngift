@@ -17,6 +17,8 @@ if 'selected_book' not in st.session_state:
     st.session_state.selected_book = None
 if 'active_tab' not in st.session_state:
     st.session_state.active_tab = 'Summary'
+if 'show_modal' not in st.session_state:
+    st.session_state.show_modal = False
 
 # Define categories
 CATEGORIES = [
@@ -169,9 +171,16 @@ def main():
             placeholder="Choose a book..."
         )
 
-    # Display table of all books underneath the dropdowns
-    st.markdown("### Books List")
-    st.dataframe(filtered_df[['Title', 'Category', 'Summary']])
+    # Button to show the books list in a modal popup
+    if st.button("Show Books List"):
+        st.session_state.show_modal = True
+
+    # Display modal with the books table
+    if st.session_state.show_modal:
+        with st.modal("Books List"):
+            st.dataframe(filtered_df[['Title', 'Category', 'Summary']])
+            if st.button("Close"):
+                st.session_state.show_modal = False
 
     if selected_book:
         # If the selected book has changed, reset the chat
