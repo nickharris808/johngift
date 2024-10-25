@@ -3,6 +3,7 @@ import pandas as pd
 import openai
 from typing import List, Dict
 import os
+
 openai.api_key = os.getenv("OPENAI_API_KEY")  
 # Configure page settings
 st.set_page_config(page_title="John's Books", layout="wide")
@@ -12,6 +13,10 @@ if 'messages' not in st.session_state:
     st.session_state.messages = []
 if 'openai_model' not in st.session_state:
     st.session_state.openai_model = "gpt-4o"
+if 'selected_book' not in st.session_state:
+    st.session_state.selected_book = None
+if 'show_expander' not in st.session_state:
+    st.session_state.show_expander = False
 
 # Define categories
 CATEGORIES = [
@@ -78,15 +83,15 @@ def initialize_chat(book_summary: str):
     system_prompt = {
         "role": "system",
         "content": f"""You are a knowledgeable assistant who has read and deeply understands this book. 
-        Use the following summary as context for our discussion:
-        {book_summary}
-        
-        Provide thoughtful, relevant responses based on the book's content and themes. 
-        When appropriate, reference specific examples from the book to support your points."""
+Use the following summary as context for our discussion:
+{book_summary}
+
+Provide thoughtful, relevant responses based on the book's content and themes. 
+When appropriate, reference specific examples from the book to support your points."""
     }
     st.session_state.messages = [system_prompt]
 
-def assistant_response(messages: List[Dict[str, str]], model: str) -> str:
+def assistant_response(messages: List[Dict[str, str]], model: str):
     """Get response from OpenAI API."""
     try:
         response = openai.ChatCompletion.create(
@@ -107,7 +112,7 @@ def display_chat_interface():
                 st.markdown(message["content"])
 
     prompt = st.chat_input("What would you like to ask about the book?")
-    
+
     if prompt:
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -116,12 +121,13 @@ def display_chat_interface():
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             full_response = ""
-            
+
             response = assistant_response(st.session_state.messages, st.session_state.openai_model)
             if response:
                 try:
                     for chunk in response:
-                        full_response += chunk.choices[0].delta.get("content", "")
+                        chunk_content = chunk.choices[0].delta.get("content", "")
+                        full_response += chunk_content
                         message_placeholder.markdown(full_response + "▌")
                     
                     message_placeholder.markdown(full_response)
@@ -158,33 +164,50 @@ def main():
         # Book selection dropdown (filtered by category)
         selected_book = st.selectbox(
             "Select Book",
-            options=filtered_df['Title'].tolist(),  # Changed from 'Book' to 'Title'
-            index=None,
+            options=filtered_df['Title'].tolist(),
+            index=0 if len(filtered_df) > 0 else None,
             placeholder="Choose a book..."
         )
 
+    # Button to show the books list in an expander
+    if st.button("Show Books List"):
+        st.session_state.show_expander = not st.session_state.show_expander
+
+    # Display expander with the books table
+    if st.session_state.show_expander:
+        with st.expander("Books List", expanded=True):
+            st.dataframe(filtered_df[['Title', 'Category', 'Summary']])
+
     if selected_book:
-        book_data = df[df['Title'] == selected_book].iloc[0]  # Changed from 'Book' to 'Title'
+        # If the selected book has changed, reset the chat
+        if st.session_state.selected_book != selected_book:
+            st.session_state.selected_book = selected_book
+            # Reset the chat messages
+            st.session_state.messages = []
+            # Get the book data
+            book_data = df[df['Title'] == selected_book].iloc[0]
+            # Initialize chat with new book summary
+            initialize_chat(book_data['Summary'])
+        else:
+            # Get the book data
+            book_data = df[df['Title'] == selected_book].iloc[0]
 
         # Create three tabs
-        tab1, tab2, tab3 = st.tabs([
-            "Summary", 
-            "Personalized Takeaway",
-            "Chat"
-        ])
+        tab1, tab2, tab3 = st.tabs(["Summary", "Personalized Takeaway", "Chat"])
 
+        # Display Summary tab
         with tab1:
             st.markdown("### Book Summary")
             st.write(book_data['Summary'])
 
+        # Display Personalized Takeaway tab
         with tab2:
             st.markdown("### Personalized Takeaway")
             st.write(book_data['Personalized Takeaway'])
 
+        # Display Chat tab
         with tab3:
             st.markdown("### Chat about the Book")
-            if not st.session_state.messages:
-                initialize_chat(book_data['Summary'])
             display_chat_interface()
 
 if __name__ == "__main__":
