@@ -166,23 +166,18 @@ def main():
     if selected_book:
         book_data = df[df['Title'] == selected_book].iloc[0]  # Changed from 'Book' to 'Title'
 
-        # Create three tabs
-        tab1, tab2 = st.tabs([
-            "Summary", 
-            "Chat"
-        ])
+        # Create two tabs
+        tab1, tab2 = st.tabs(["Summary", "Chat"])
 
         with tab1:
             st.markdown("### Book Summary")
             st.write(book_data['Summary'])
 
         with tab2:
-           st.markdown("### Chat about the Book")
-        if not st.session_state.messages:
+            st.markdown("### Chat about the Book")
+            if not st.session_state.messages:
                 initialize_chat(book_data['Summary'])
             display_chat_interface()
-
-           
 
 if __name__ == "__main__":
     main()
