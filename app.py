@@ -5,7 +5,7 @@ from typing import List, Dict
 import os
 openai.api_key = os.getenv("OPENAI_API_KEY")  
 # Configure page settings
-st.set_page_config(page_title="Shoe Felt Books", layout="wide")
+st.set_page_config(page_title="John's Books", layout="wide")
 
 # Initialize session state variables
 if 'messages' not in st.session_state:
