@@ -23,23 +23,19 @@ if 'show_expander' not in st.session_state:
 # Define categories
 CATEGORIES = [
     "All Categories",
-    "Self-help",
     "History",
-    "Biography & Memoir",
+    "Self-help",
+    "Biography",
     "Science",
     "Non-fiction",
     "Fiction",
-    "Biography",
-    "Health",
     "Business",
-    "Economics",
+    "Health",
     "Memoir",
-    "Classic",
     "Thriller",
+    "Classic",
     "Philosophy",
     "Fantasy",
-    "Historical",
-    "Business & Economics",
     "Travel"
 ]
 
