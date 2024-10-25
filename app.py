@@ -177,14 +177,13 @@ def main():
             st.write(book_data['Summary'])
 
         with tab2:
-            st.markdown("### Personalized Takeaway")
-            st.write(book_data['Personalized Takeaway'])
-
-        with tab3:
-            st.markdown("### Chat about the Book")
+           st.markdown("### Chat about the Book")
             if not st.session_state.messages:
                 initialize_chat(book_data['Summary'])
             display_chat_interface()
+
+        with tab3:
+           
 
 if __name__ == "__main__":
     main()
