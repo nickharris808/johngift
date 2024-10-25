@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import openai
 from typing import List, Dict
+import os
 
 # Configure page settings
 st.set_page_config(page_title="Shoe Felt Books", layout="wide")
@@ -12,9 +13,47 @@ if 'messages' not in st.session_state:
 if 'openai_model' not in st.session_state:
     st.session_state.openai_model = "gpt-4"
 
+# Sample data in case CSV is not found
+SAMPLE_DATA = {
+    'Book': ['Atomic Habits', 'Deep Work', 'Think Again'],
+    'Summary': [
+        'A guide about building good habits and breaking bad ones.',
+        'How to develop the ability to focus without distraction.',
+        'The power of knowing what you don't know and how to rethink and unlearn.'
+    ],
+    'Category': ['Self-Help', 'Productivity', 'Psychology'],
+    'Quotes': [
+        '"You do not rise to the level of your goals. You fall to the level of your systems."',
+        '"Deep work is the ability to focus without distraction on a cognitively demanding task."',
+        '"The goal is not to be right. The goal is to get it right."'
+    ],
+    'Personalized Takeaway': [
+        'Focus on building systems rather than setting goals.',
+        'Schedule deep work sessions and protect them zealously.',
+        'Embrace the joy of being wrong and learning from mistakes.'
+    ]
+}
+
 def load_data() -> pd.DataFrame:
-    """Load and return the book data from CSV."""
-    return pd.read_csv('data.csv')
+    """Load book data from CSV or use sample data if file not found."""
+    try:
+        # First try to load from the current directory
+        if os.path.exists('data.csv'):
+            return pd.read_csv('data.csv')
+        
+        # Then try to load from the app's directory
+        app_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_path = os.path.join(app_dir, 'data.csv')
+        if os.path.exists(csv_path):
+            return pd.read_csv(csv_path)
+        
+        # If no CSV found, use sample data
+        st.warning("data.csv not found. Using sample data for demonstration.")
+        return pd.DataFrame(SAMPLE_DATA)
+    
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return pd.DataFrame(SAMPLE_DATA)
 
 def initialize_chat(book_summary: str):
     """Initialize chat with system prompt including book context."""
@@ -31,12 +70,16 @@ def initialize_chat(book_summary: str):
 
 def assistant_response(messages: List[Dict[str, str]], model: str) -> str:
     """Get response from OpenAI API."""
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        stream=True
-    )
-    return response
+    try:
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+            stream=True
+        )
+        return response
+    except Exception as e:
+        st.error(f"Error getting response from OpenAI: {str(e)}")
+        return None
 
 def display_chat_interface():
     """Display and handle the chat interface."""
@@ -56,13 +99,17 @@ def display_chat_interface():
             message_placeholder = st.empty()
             full_response = ""
             
-            # Stream the response
-            for response in assistant_response(st.session_state.messages, st.session_state.openai_model):
-                full_response += response.choices[0].delta.get("content", "")
-                message_placeholder.markdown(full_response + "▌")
-            
-            message_placeholder.markdown(full_response)
-            st.session_state.messages.append({"role": "assistant", "content": full_response})
+            response = assistant_response(st.session_state.messages, st.session_state.openai_model)
+            if response:
+                try:
+                    for chunk in response:
+                        full_response += chunk.choices[0].delta.get("content", "")
+                        message_placeholder.markdown(full_response + "▌")
+                    
+                    message_placeholder.markdown(full_response)
+                    st.session_state.messages.append({"role": "assistant", "content": full_response})
+                except Exception as e:
+                    st.error(f"Error processing response: {str(e)}")
 
 def main():
     """Main application function."""
