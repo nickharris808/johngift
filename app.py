@@ -37,24 +37,8 @@ CATEGORIES = [
     "Travel"
 ]
 
-# Sample data in case CSV is not found
-SAMPLE_DATA = {
-    'Title': ["Atomic Habits", "Deep Work", "Think Again"],
-    'Summary': [
-        "A guide about building good habits and breaking bad ones.",
-        "How to develop the ability to focus without distraction.",
-        "The power of knowing what you don't know and how to rethink and unlearn."
-    ],
-    'Category': ["Self-help", "Business", "Non-fiction"],
-    'Personalized Takeaway': [
-        "Focus on building systems rather than setting goals.",
-        "Schedule deep work sessions and protect them zealously.",
-        "Embrace the joy of being wrong and learning from mistakes."
-    ]
-}
-
 def load_data() -> pd.DataFrame:
-    """Load book data from CSV or use sample data if file not found."""
+    """Load book data from CSV."""
     try:
         # First try to load from the current directory
         if os.path.exists('data.csv'):
@@ -66,13 +50,12 @@ def load_data() -> pd.DataFrame:
         if os.path.exists(csv_path):
             return pd.read_csv(csv_path)
         
-        # If no CSV found, use sample data
-        st.warning("data.csv not found. Using sample data for demonstration.")
-        return pd.DataFrame(SAMPLE_DATA)
+        st.error("data.csv not found. Please ensure the data file exists.")
+        return pd.DataFrame()
     
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
-        return pd.DataFrame(SAMPLE_DATA)
+        return pd.DataFrame()
 
 def initialize_chat(book_summary: str):
     """Initialize chat with system prompt including book context."""
@@ -137,9 +120,13 @@ def main():
 
     # Load data
     df = load_data()
+    
+    if df.empty:
+        st.warning("No data available. Please check if the data file exists and is properly formatted.")
+        return
 
-    # Create two columns for the filters
-    col1, col2 = st.columns([1, 2])
+    # Create three columns for the filters
+    col1, col2, col3 = st.columns([1, 1, 2])
 
     with col1:
         # Category filter dropdown
@@ -150,14 +137,26 @@ def main():
             key="category_filter"
         )
 
-    # Filter books based on selected category
-    if selected_category == "All Categories":
-        filtered_df = df
-    else:
-        filtered_df = df[df['Category'] == selected_category]
-
     with col2:
-        # Book selection dropdown (filtered by category)
+        # Author filter dropdown
+        # Get unique authors and add "All Authors" option
+        authors = ["All Authors"] + sorted(df['Author'].unique().tolist())
+        selected_author = st.selectbox(
+            "Select Author",
+            options=authors,
+            index=0,
+            key="author_filter"
+        )
+
+    # Filter books based on selected category and author
+    filtered_df = df.copy()
+    if selected_category != "All Categories":
+        filtered_df = filtered_df[filtered_df['Category'] == selected_category]
+    if selected_author != "All Authors":
+        filtered_df = filtered_df[filtered_df['Author'] == selected_author]
+
+    with col3:
+        # Book selection dropdown (filtered by category and author)
         selected_book = st.selectbox(
             "Select Book",
             options=filtered_df['Title'].tolist(),
@@ -172,7 +171,7 @@ def main():
     # Display expander with the books table
     if st.session_state.show_expander:
         with st.expander("Books List", expanded=True):
-            st.dataframe(filtered_df[['Title', 'Category', 'Summary']])
+            st.dataframe(filtered_df[['Title', 'Category', 'Author', 'Summary']])
 
     if selected_book:
         # If the selected book has changed, reset the chat
