@@ -187,21 +187,16 @@ def main():
             # Get the book data
             book_data = df[df['Title'] == selected_book].iloc[0]
 
-        # Create three tabs
-        tab1, tab2, tab3 = st.tabs(["Summary", "Personalized Takeaway", "Chat"])
+        # Create two tabs (removed Personalized Takeaway tab)
+        tab1, tab2 = st.tabs(["Summary", "Chat"])
 
         # Display Summary tab
         with tab1:
             st.markdown("### Book Summary")
             st.write(book_data['Summary'])
 
-        # Display Personalized Takeaway tab
-        with tab2:
-            st.markdown("### Personalized Takeaway")
-            st.write(book_data['Personalized Takeaway'])
-
         # Display Chat tab
-        with tab3:
+        with tab2:
             st.markdown("### Chat about the Book")
             display_chat_interface()
 
